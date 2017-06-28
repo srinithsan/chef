@@ -1,0 +1,245 @@
+
+
+Foodcritic is a helpful (Chefbased) lint tool you can use to check your Chef cookbooks for common problems.
+It comes with 85 built-in rules that identify problems ranging from simple style inconsistencies to difficult to diagnose issues that will hurt in production.  Chef based tool
+
+
+Rubocop ruby based Lintool and stlye checking 
+
+  Tool
+
+
+Commands for unit testing ( Report shows in the form of xml )
+=========================
+export  HTTP_PROXY HTTPS_PROXY http_proxy https_proxy PATH
+cd /var/lib/jenkins/workspace/githubproject
+cd /var/lib/jenkins/workspace/githubproject/
+rm -rf *
+cp  /root/test/test.tar /var/lib/jenkins/workspace/githubproject/
+tar -xf /var/lib/jenkins/workspace/githubproject/test.tar || true
+cd /var/lib/jenkins/workspace/githubproject/test/
+rm -rf /var/lib/jenkins/workspace/githubproject/test/coverage  /var/lib/jenkins/workspace/chef-unittesting/coverage /var/lib/jenkins/workspace/githubproject/test/spec/default_spec.rb
+mkdir -p /var/lib/jenkins/workspace/chef-unittesting/coverage
+chef exec rspec `find spec -name "*.rb" | grep -v spec_helper` -r rspec_junit_formatter --format RspecJunitFormatter -o /var/lib/jenkins/workspace/chef-unittesting/xml/unittest-report.xml | tee /var/lib/jenkins/workspace/chef-unittesting/xml/coverage.html  || true
+/var/lib/jenkins/workspace/githubproject/test/spec/unit/recipes/default_spec.rb 
+/var/lib/jenkins/workspace/githubproject/test/spec/installtest_spec.rb
+
+
+Installing Plugins 
+============
+    XML Plugin 
+         
+spec_helper.rb
+================
+require 'chefspec'
+#require 'chefspec/berkshelf'
+ChefSpec::Coverage.start!
+at_exit { ChefSpec::Coverage.report! }
+RSpec.configure do |config|
+  config.color = true
+end
+display-gold-parm1
+
+
+
+Unit Testing 
+=======================
+Chefspec is unittesting tool is used to test the recipe as by run the recipe in memory by block by block
+and provide coverage report on completion. 
+When using ChefSpec::ServerRunner, specify the data storage method (options: in_memory, on_disk; default: in_memory)
+# If you are in a low-memory environment, setting this value to :on_disk may improve speed and/or reliability.
+The ServerRunner uses a chef-zero instance as a stand-in for a full Chef Server. The instance is created at the initiation of the ChefSpec suite and is terminated at its completion. In between each test the state of the ChefZero server is completely reset.
+
+
+
+
+
+Command for Test the recipe for chefspec
+=======================================
+chef exec rspec `find spec -name "*.rb" | grep -v spec_helper` -r rspec_junit_formatter --format RspecJunitFormatter -o /var/lib/jenkins/workspace/chef-unittesting/xml/unittest-report.xml | tee /var/lib/jenkins/workspace/chef-unittesting/xml/coverage.html  || true
+
+
+Requirements 
+=============
+	 RspecJunitFormatter Gem has to be installed in chefdk and test the same.
+
+ Gem installation Steps
+
+	 Gem can be installed in using 
+                gem install gem file
+         Can be deployed Gemfile ServerSpec as Gemfile
+
+Reference  => http://www.agilosoftware.com/blog/configuring-test-kitchen-output-for-jenkins/
+
+Coverage Report Sample
+========================
+chef exec rspec `find spec -name "*.rb"
+> `
+......
+
+Finished in 3.22 seconds (files took 3.32 seconds to load)
+6 examples, 0 failures
+
+
+ChefSpec Coverage report generated...
+
+  Total Resources:   5
+  Touched Resources: 4
+  Touch Coverage:    80.0%
+
+Untouched Resources:
+
+  bash[install_JDK]                  /recipes/installtest.rb:34
+
+
+ChefSpec Coverage report generated...
+
+  Total Resources:   5
+  Touched Resources: 4
+  Touch Coverage:    80.0%
+
+Untouched Resources:
+
+  bash[install_JDK]                  /recipes/installtest.rb:34
+
+
+ChefSpec Coverage report generated...
+
+  Total Resources:   5
+  Touched Resources: 4
+  Touch Coverage:    80.0%
+
+Untouched Resources:
+
+  bash[install_JDK]                  /recipes/installtest.rb:34
+
+
+ChefSpec Coverage report generated...
+
+  Total Resources:   5
+  Touched Resources: 4
+  Touch Coverage:    80.0%
+
+Untouched Resources:
+
+
+
+display-gold-parm1
+
+
+
+
+
+
+
+default-spec.rb
+require 'spec_helper'
+
+describe 'test::installtest' do
+  context 'When all attributes are default, on an unspecified platform' do
+    before(:each) do
+      stub_command("rpm -qa | grep -q '^runit'").and_return(true)  - Stubbing Command 
+    end
+    let(:chef_run) do
+      runner = ChefSpec::SoloRunner.new  ---  Solo runner 
+      runner.converge(described_recipe)
+    end
+
+    it 'converges successfully' do
+      expect { chef_run }.to_not raise_error
+    end
+
+    it 'creates a file' do
+      #     chef_run = ChefSpec::Runner.new.converge(described_recipe)
+      expect(chef_run).to create_cookbook_file('/apps/test/ecl-woa-login-sb-exec.war')  ( Verify runner _
+    end
+    it 'creates a directory' do
+      #     chef_run = ChefSpec::Runner.new.converge(described_recipe)
+      expect(chef_run).to create_directory('/apps/')
+      expect(chef_run).to create_directory('/apps/test')
+      expect(chef_run).to create_cookbook_file('/apps/test/start.sh')
+    end
+  end
+end
+
+
+
+
+
+Links
+======
+https://github.com/jitheshktv/JK_TIBCO
+https://docs.chef.io/
+
+
+
+
+
+==
+Recipe
+#
+# Cookbook Name:: test
+# Recipe:: installtest
+#
+directory '/apps/' do
+  owner 'root'
+  group 'root'
+  mode 00755
+  action :create
+  recursive true
+end
+directory '/apps/test' do
+  owner 'root'
+  group 'root'
+  mode 00755
+  action :create
+  recursive true
+end
+cookbook_file 'start.sh' do
+  owner 'root'
+  group 'root'
+  mode '0755'
+  path '/apps/test/start.sh'
+  source 'start.sh'
+end
+cookbook_file 'test.war' do
+  owner 'root'
+  group 'root'
+  mode '0755'
+  path '/apps/test/ecl-woa-login-sb-exec.war'
+  source 'ecl-woa-login-sb-exec.war'
+  action :create
+end
+bash 'install_JDK' do
+  user 'root'
+  code <<-EOH
+    cd /apps/test/
+    sh start.sh
+EOH
+end
+
+
+
+
+require 'chefspec'
+#require 'chefspec/berkshelf'
+ChefSpec::Coverage.start!
+at_exit { ChefSpec::Coverage.report! }
+RSpec.configure do |config|
+  config.color = true
+end
+
+    it 'creates a file' do
+      #     chef_run = ChefSpec::Runner.new.converge(described_recipe)
+      expect(chef_run).to create_cookbook_file('/apps/eclipse/ecl-woa-login-sb-exec.war')
+    end
+    it 'creates a directory' do
+      #     chef_run = ChefSpec::Runner.new.converge(described_recipe)
+      expect(chef_run).to create_directory('/apps/')
+      expect(chef_run).to create_directory('/apps/eclipse')
+      expect(chef_run).to create_cookbook_file('/apps/eclipse/start.sh')
+    end
+
+
+/apps/tibco/logs
+

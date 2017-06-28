@@ -1,0 +1,88 @@
+PATH=/opt/chefdk/embedded/bin:$PATH
+export  HTTP_PROXY HTTPS_PROXY http_proxy https_proxy PATH
+cd /var/lib/jenkins/workspace/githubproject
+mkdir -p /var/lib/jenkins/workspace/githubproject/files
+cd /var/lib/jenkins/workspace/githubproject/  || true
+tar -xf /root/jenkins-eclipse/kitchen-eclipse.tar
+cp /root/jenkins-eclipse/kitchen.yml /var/lib/jenkins/workspace/githubproject/.kitchen.yml
+cp -r /root/jenkins-eclipse/test /var/lib/jenkins/workspace/githubproject/
+mkdir -p /var/lib/jenkins/workspace/githubproject/cookbooks
+cp -r /var/lib/jenkins/workspace/githubproject/eclipse/ /var/lib/jenkins/workspace/githubproject/cookbooks
+cd /var/lib/jenkins/workspace/githubproject/
+cp /var/lib/jenkins/workspace/githubproject/eclipse/metadata.rb /var/lib/jenkins/workspace/githubproject/
+kitchen test -d never > /var/lib/jenkins/workspace/githubproject/jenkins-kitchentest.log
+mkdir -p /var/lib/jenkins/workspace/chef-it-testing/xml
+sed -n '/<testsuites/,/\/testsuites/p' /var/lib/jenkins/workspace/githubproject/jenkins-kitchentest.log > /var/lib/jenkins/workspace/chef-it-testing/xml/kitchen-output.xml
+
+
+Dockerfile
+==========
+FROM rhel7
+#ADD /apps/chef /apps/chef
+ADD files/ssh.repo /etc/yum.repos.d/ssh.repo
+#RUN yum clean all
+RUN yum install -y sudo openssh-server openssh-clients which curl htop
+#RUN yum install -y sudo openssh-server openssh-clients which curl htop
+RUN ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key
+RUN ssh-keygen -t dsa -f /etc/ssh/ssh_host_dsa_key
+RUN mkdir -p /var/run/sshd
+RUN useradd -d /home/<%= @username %> -m -s /bin/bash <%= @username %>
+RUN echo <%= "#{@username}:#{@password}" %> | chpasswd
+RUN echo '<%= @username %> ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN mkdir -p /home/<%= @username %>/.ssh
+RUN chown -R <%= @username %> /home/<%= @username %>/.ssh
+RUN chmod 0700 /home/<%= @username %>/.ssh
+RUN touch /home/<%= @username %>/.ssh/authorized_keys
+RUN chown <%= @username %> /home/<%= @username %>/.ssh/authorized_keys
+RUN chmod 0600 /home/<%= @username %>/.ssh/authorized_keys
+ENV http_proxy 'http://osedev1.nam.nsroot.net:8080'
+ENV HTTP_PROXY 'http://osedev1.nam.nsroot.net:8080'
+#RUN curl -L https://www.chef.io/chef/install.sh | bash
+#RUN rpm -Uvh /apps/chef/chef-12.14.89-1.el7.x86_64.rpm
+RUN echo '<%= IO.read(@public_key).strip %>' >> /home/<%= @username %>/.ssh/authorized_keys
+ADD files/ssh.repo /etc/yum.repos.d/ssh.repo
+RUN yum -y install chef.x86_64
+COPY files/yarjuf-2.0.0.gem /tmp/yarjuf-2.0.0.gem
+RUN cd /tmp && \
+    /opt/chef/embedded/bin/gem install yarjuf-2.0.0.gem
+EXPOSE 33000
+ADD files/tibcojre64 /tibcojre64
+==
+
+kitchen.yml
+
+---
+driver:
+  name: docker
+  binary: docker
+  username: kitchen
+  password: kitchen 
+  use_sudo: false
+provisioner:
+  name: chef_solo
+  environments_path: environments
+  coobooks_path:
+    - cookbooks
+
+  ohai:
+    disabled_plugins: ["passwd"]
+platforms:
+  - name: centos 
+    driver_config:
+      privileged: true
+      memory: 1512m
+#      volume:
+#        - /sys/fs/cgroup:/sys/fs/cgroup:ro
+      #  - /apps/chef /apps/chef
+      provision_command:
+        - echo "root:password" | chpasswd
+        - sed -i 's/Defaults    requiretty/#Defaults    requiretty/g' /etc/sudoers
+      http_proxy: http://natcpproxy.wlb2.nam.nsroot.net:9999/
+      https_proxy: http://natcpproxy.wlb2.nam.nsroot.net:9999/
+      dockerfile: files/Dockerfile 
+      forward :
+       33000:33000
+suites:
+  - name: default
+    run_list:
+      - recipe[eclipse::installeclipse]
